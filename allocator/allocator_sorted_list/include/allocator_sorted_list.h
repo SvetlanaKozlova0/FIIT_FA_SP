@@ -34,10 +34,10 @@ public:
             allocator_with_fit_mode::fit_mode allocate_fit_mode = allocator_with_fit_mode::fit_mode::first_fit);
     
     allocator_sorted_list(
-        allocator_sorted_list const &other);
+        allocator_sorted_list const &other) = delete;
     
     allocator_sorted_list &operator=(
-        allocator_sorted_list const &other);
+        allocator_sorted_list const &other) = delete;
 
     allocator_sorted_list(
         allocator_sorted_list &&other) noexcept;
@@ -67,6 +67,32 @@ private:
     inline logger *get_logger() const override;
     
     inline std::string get_typename() const override;
+
+    [[nodiscard]] inline std::mutex& get_mutex() const;
+
+    [[nodiscard]] inline std::pmr::memory_resource* get_parent_allocator() const noexcept;
+
+    inline size_t get_global_size() const noexcept;
+
+    fit_mode get_fit_mode() const noexcept;
+
+    void* allocate_first_fit(size_t need_size) noexcept;
+
+    void* allocate_best_fit(size_t need_size) noexcept;
+
+    void* allocate_worst_fit(size_t need_size) noexcept;
+
+    void* allocate_with_mode(size_t need_size) noexcept;
+
+    void** get_first_ptr() const noexcept;
+
+    void* make_block_busy(size_t need_size, size_t block_size, void* place, void* previous);
+
+    std::string info_to_string(const std::vector<allocator_test_utils::block_info>& blocks);
+
+    std::string fit_mode_to_string(fit_mode mode);
+
+    size_t get_available_size(const std::vector<allocator_test_utils::block_info>& blocks);
 
     class sorted_free_iterator
     {
