@@ -17,7 +17,6 @@ class allocator_global_heap final:
 private:
     
     logger *_logger;
-
     static constexpr const size_t size_t_size = sizeof(size_t);
 
 public:
@@ -47,18 +46,25 @@ public:
     void do_deallocate_sm(
         void *at) override;
 
-    bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override;
+    [[nodiscard]] bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override;
 
 private:
     
-    inline logger *get_logger() const override;
+    [[nodiscard]] inline logger *get_logger() const override {
+        return _logger;
+    };
 
 private:
     
-    inline std::string get_typename() const override;
+    [[nodiscard]] inline std::string get_typename() const override {
+        return "allocator_global_heap";
+    };
 
 public:
 
+private:
+    static void mark_called_trace_debug(const std::string& message, logger* log);
+    static void mark_completed_trace_debug(const std::string& message, logger* log);
 };
 
 #endif //MATH_PRACTICE_AND_OPERATING_SYSTEMS_ALLOCATOR_ALLOCATOR_GLOBAL_HEAP_H
