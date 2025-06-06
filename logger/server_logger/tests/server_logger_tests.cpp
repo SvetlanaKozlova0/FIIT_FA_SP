@@ -4,7 +4,6 @@
 int main()
 {
 
-
     server_logger_builder builder;
 
     builder.add_file_stream("a.txt", logger::severity::trace).add_file_stream("b.txt", logger::severity::debug).
@@ -15,5 +14,5 @@ int main()
     log->trace("good").debug("debug");
 
     log->trace("IT is a very long strange message !!!!!!!!!!%%%%%%%%\tzdtjhdjh").
-		information("bfldknbpxjxjvpxvjbpzjbpsjbpsjkgbpsejegpsjpegesjpvbejpvjzepvgjs");
+            information("bfldknbpxjxjvpxvjbpzjbpsjbpsjkgbpsejegpsjpegesjpvbejpvjzepvgjs");
 }
