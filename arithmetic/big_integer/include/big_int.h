@@ -1,7 +1,3 @@
-//
-// Created by Des Caldnd on 5/27/2024.
-//
-
 #ifndef MP_OS_BIG_INT_H
 #define MP_OS_BIG_INT_H
 
@@ -11,6 +7,7 @@
 #include <concepts>
 #include <pp_allocator.h>
 #include <not_implemented.h>
+#include "NTT.h"
 
 namespace __detail
 {
@@ -48,9 +45,15 @@ namespace __detail
 
 class big_int
 {
+
     // Call optimise after every operation!!!
     bool _sign; // 1 +  0 -
     std::vector<unsigned int, pp_allocator<unsigned int>> _digits;
+
+private:
+
+    void optimise();
+    uint64_t mask = (1ULL << (8 * sizeof(unsigned int))) - 1;
 
 public:
 
@@ -70,10 +73,16 @@ public:
 
 private:
 
-    /** Decides type of mult/div that depends on size of lhs and rhs
-     */
-    multiplication_rule decide_mult(size_t rhs) const noexcept;
-    division_rule decide_div(size_t rhs) const noexcept;
+    static constexpr unsigned long long BITS_PER_DIGIT = 8 * sizeof(unsigned int);
+    static constexpr unsigned long long HALF_OF_DIGIT = 4 * sizeof(unsigned int);
+    static constexpr unsigned long long BASE = 1ULL << (BITS_PER_DIGIT);
+
+
+    [[nodiscard]] big_int::multiplication_rule decide_mult(size_t rhs) const noexcept;
+
+    [[nodiscard]] big_int::division_rule decide_div(size_t rhs) const noexcept;
+
+    void trivial_divide_help(const big_int& other, std::vector<unsigned int, pp_allocator<unsigned int>>& quotient, std::vector<unsigned int, pp_allocator<unsigned int>>& remain) &;
 
 public:
 
@@ -100,6 +109,7 @@ public:
 
     big_int& operator--() &;
     big_int operator--(int);
+    big_int operator-() const;
 
     big_int& operator+=(const big_int& other) &;
 
@@ -109,16 +119,15 @@ public:
      */
     big_int& plus_assign(const big_int& other, size_t shift = 0) &;
 
-
     big_int& operator-=(const big_int& other) &;
 
     big_int& minus_assign(const big_int& other, size_t shift = 0) &;
 
-    /** Delegates to multiply_assign and calls decide_mult
-     */
     big_int& operator*=(const big_int& other) &;
 
     big_int& multiply_assign(const big_int& other, multiplication_rule rule = multiplication_rule::trivial) &;
+    big_int& trivial_multiply(const big_int& other) &;
+    big_int karatsuba_multiply(const big_int& x, const big_int& y);
 
     big_int& operator/=(const big_int& other) &;
 
@@ -163,19 +172,53 @@ public:
 
     friend std::istream &operator>>(std::istream &stream, big_int &value);
 
-    std::string to_string() const;
+    [[nodiscard]] std::string to_string() const;
+
+    friend big_int multiply_strassen(const big_int &a, const big_int &b);
+    friend big_int schonhage_strassen::multiply_schonhage_strassen(const big_int& left, const big_int& right);
+    friend big_int schonhage_strassen::blocks_to_number(const std::vector<uint64_t>& blocks, size_t block_bits, bool sign);
+    friend std::vector<uint64_t> schonhage_strassen::number_to_blocks(const big_int& num, size_t block_bits);
+
+private:
+
+    [[nodiscard]] bool is_zero() const;
+
+    void clear_big_int();
+
+    unsigned long long find_divider(const big_int& abs_other, const big_int& remainder);
+
+    bool compare_abs_numbers(const big_int& other, size_t shift);
+
+    bool determine_the_sign(const big_int& other) const;
+
 };
 
 template<class alloc>
-big_int::big_int(const std::vector<unsigned int, alloc> &digits, bool sign, pp_allocator<unsigned int> allocator)
-{
-    throw not_implemented("template<class alloc> big_int::big_int(const std::vector<unsigned int, alloc> &digits, bool sign, pp_allocator<unsigned int> allocator)", "your code should be here...");
+big_int::big_int(const std::vector<unsigned int, alloc>& digits, bool sign, pp_allocator<unsigned int> allocator) : _sign(sign), _digits(digits.begin(), digits.end(), allocator) {
+    if (_digits.empty()) {
+        _digits.push_back(0);
+    }
+
+    while (_digits.size() > 1 && _digits.back() == 0) {
+        _digits.pop_back();
+    }
 }
 
 template<std::integral Num>
-big_int::big_int(Num d, pp_allocator<unsigned int>)
-{
-    throw not_implemented("template<std::integral Num>big_int::big_int(Num, pp_allocator<unsigned int>)", "your code should be here...");
+big_int::big_int(Num d, pp_allocator<unsigned int> allocator) : _sign(d >= 0), _digits(allocator) {
+    auto abs_d = static_cast<unsigned long long>(d < 0 ? -d : d);
+    _digits.clear();
+    if (abs_d == 0) {
+        _digits.push_back(0);
+    } else {
+        while (abs_d > 0) {
+            _digits.push_back(static_cast<unsigned int>(abs_d % BASE));
+            abs_d /= BASE;
+        }
+    }
+    while (_digits.size() > 1 && _digits.back() == 0) {
+        _digits.pop_back();
+    }
 }
 
 big_int operator""_bi(unsigned long long n);
