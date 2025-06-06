@@ -40,7 +40,7 @@ private:
         ~refcounted_stream();
     };
 
-    //region refcounted_stream
+    //endregion refcounted_stream
 
     enum class flag
     { DATE, TIME, SEVERITY, MESSAGE, NO_FLAG };
