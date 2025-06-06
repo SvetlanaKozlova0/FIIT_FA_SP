@@ -15,14 +15,21 @@ private:
 
     void optimise(); //сокращает дробь
 
+
 public:
 
-    /** Perfect forwarding ctor
-     */
+    /* Perfect forwarding ctor
+     */// fraction.h
     template<std::convertible_to<big_int> f, std::convertible_to<big_int> s>
-    fraction(f &&numerator, s &&denominator);
+    fraction(f &&numerator, s &&denominator)
+            : _numerator(std::forward<f>(numerator)),
+              _denominator(std::forward<s>(denominator))
+    {
+        optimise();
+    }
 
     fraction(pp_allocator<big_int::value_type> = pp_allocator<big_int::value_type>());
+
 
 public:
 
@@ -82,6 +89,8 @@ public:
 
     fraction arccosec(fraction const &epsilon = fraction(1_bi, 1000000_bi)) const;
 
+    fraction abs() const;
+
 public:
 
     fraction pow(size_t degree) const;
@@ -97,6 +106,8 @@ public:
     fraction ln(fraction const &epsilon = fraction(1_bi, 1000000_bi)) const;
 
     fraction lg(fraction const &epsilon = fraction(1_bi, 1000000_bi)) const;
+
+    fraction compute_pi(const fraction &epsilon) const;
 
 };
 
