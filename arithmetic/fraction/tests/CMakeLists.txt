@@ -1,0 +1,5 @@
+add_executable(fraction_tests fraction_tests.cpp)
+
+target_link_libraries(fraction_tests PUBLIC mp_os_arthmtc_frctn)
+
+target_link_libraries(fraction_tests PRIVATE gtest_main)
