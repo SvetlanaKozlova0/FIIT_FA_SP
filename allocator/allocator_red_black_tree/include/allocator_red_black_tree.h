@@ -29,7 +29,7 @@ private:
 
     void *_trusted_memory;
 
-    static constexpr const size_t allocator_metadata_size = sizeof(logger*) + sizeof(allocator_dbg_helper*) + sizeof(fit_mode) + sizeof(size_t) + sizeof(std::mutex) + sizeof(void*);
+    static constexpr const size_t allocator_metadata_size = sizeof(logger*) + sizeof(std::pmr::memory_resource *) + sizeof(fit_mode) + sizeof(size_t) + sizeof(std::mutex) + sizeof(void*);
     static constexpr const size_t occupied_block_metadata_size = sizeof(block_data) + 3 * sizeof(void*);
     static constexpr const size_t free_block_metadata_size = sizeof(block_data) + 5 * sizeof(void*);
 
@@ -38,10 +38,10 @@ public:
     ~allocator_red_black_tree() override;
     
     allocator_red_black_tree(
-        allocator_red_black_tree const &other);
+        allocator_red_black_tree const &other) = delete;
     
     allocator_red_black_tree &operator=(
-        allocator_red_black_tree const &other);
+        allocator_red_black_tree const &other) = delete;
     
     allocator_red_black_tree(
         allocator_red_black_tree &&other) noexcept;
@@ -116,6 +116,38 @@ private:
     rb_iterator begin() const noexcept;
     rb_iterator end() const noexcept;
 
+private:
+    inline std::mutex& get_mutex() const noexcept;
+    [[nodiscard]] inline std::pmr::memory_resource* get_parent_allocator() const;
+    [[nodiscard]] inline size_t get_global_size() const;
+    static void*& get_next_block(void* current_block) ;
+    static void*& get_previous_block(void* current_block) ;
+    static void*& get_parent_block(void* current_block) ;
+    static void*& get_left_block(void* current_block) ;
+    static void*& get_right_block(void* current_block) ;
+    static void** get_first_ptr(void* trusted_mem) noexcept;
+    void small_left_rotate(void* block) noexcept;
+    void small_right_rotate(void* block) noexcept;
+    void big_left_rotate(void* block) noexcept;
+    void big_right_rotate(void* block) noexcept;
+    size_t get_block_size(void* block) const noexcept;
+    void insert_in_tree(void* current_block) noexcept;
+    void balance_after_erase(void* parent, void* deleted = nullptr) noexcept;
+    void erase_from_tree(void* current_block) noexcept;
+    size_t get_all_free_size() const noexcept;
+    std::string get_info_in_string(const std::vector<allocator_test_utils::block_info>& ve) noexcept;
+    void* allocate_best_fit(size_t size) const noexcept;
+    void* allocate_worst_fit(size_t size) const noexcept;
+    void* allocate_first_fit(size_t size) const noexcept;
+    fit_mode get_fit_mode() const noexcept;
+    void* allocate_with_mode(size_t need_size) const noexcept;
+    void make_black(void* block) const noexcept;
+    void make_red(void* block) const noexcept;
+    bool is_red(void* block) const noexcept;
+    bool is_black(void* block) const noexcept;
+    void balance_after_insert(void* current_block, void* parent) noexcept;
+    void split_block(void* block, size_t size) ;
+    void merge_blocks(void* real_block);
 };
 
 #endif //MATH_PRACTICE_AND_OPERATING_SYSTEMS_ALLOCATOR_ALLOCATOR_RED_BLACK_TREE_H
